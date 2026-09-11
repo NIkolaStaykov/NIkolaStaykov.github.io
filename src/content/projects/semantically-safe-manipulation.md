@@ -40,8 +40,4 @@ order: 2
 Published in **IEEE Robotics and Automation Letters**. Work with the
 [Dynamic Systems Lab](https://www.dynsyslab.org/) at UTIAS.
 
-<!-- TODO(nikola): `hardPart` above is drafted from the paper's framing, NOT from
-     your account of the work. Rewrite it in your own words — what was non-obvious
-     to *you* on the detection/segmentation and safety-filter integration. That is
-     the single highest-signal paragraph on this page and it has to be yours.
-     Also: confirm the real start date (currently anchored to the arXiv date). -->
+<!-- TODO(nikola): confirm the real start date (currently anchored to the arXiv date). -->
