@@ -1,0 +1,23 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Nav from '../../components/Nav.astro';
+import ProjectRow from '../../components/ProjectRow.astro';
+
+const projects = (await getCollection('projects', (p) => !p.data.draft))
+  .sort((a, b) => a.data.order - b.data.order);
+---
+
+<Base title="Projects" description="Robotics and machine learning projects by Nikola Staykov.">
+  <Nav slot="nav" />
+  <section class="band">
+    <h1 class="band-label">Projects</h1>
+    <ul class="band-body rows">
+      {projects.map((entry) => <ProjectRow entry={entry} />)}
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .rows { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-8); }
+</style>

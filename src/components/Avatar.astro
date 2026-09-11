@@ -1,0 +1,36 @@
+---
+import { site } from '../config';
+
+/** Portrait, or an initials placeholder while none exists. */
+const initials = site.name.split(' ').map((w) => w[0]).join('');
+---
+
+{site.photo ? (
+  <img class="portrait" src={site.photo} width={220} height={220} alt={`${site.name}, portrait`} />
+) : (
+  <div class="portrait portrait--placeholder" role="img"
+       aria-label={`${site.name} — portrait pending`}>
+    <span>{initials}</span>
+  </div>
+)}
+
+<style>
+  .portrait {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    display: block;
+    background: var(--bg-sunken);
+    border: 1px solid var(--rule);
+  }
+  .portrait--placeholder { display: grid; place-items: center; }
+  .portrait--placeholder span {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    color: var(--rule-strong);
+  }
+  @media (max-width: 48rem) {
+    .portrait { width: min(52vw, 200px); }
+  }
+</style>

@@ -1,0 +1,86 @@
+---
+/**
+ * Above-the-fold media.
+ *
+ * Deliberately NOT given the `.reveal` class: a scroll-triggered hero can be
+ * skimmed straight past, and this is the one element a reader must not miss.
+ * It renders and plays on load.
+ *
+ * The still is always in the markup. When a clip exists it sits on top; under
+ * `prefers-reduced-motion` the clip is removed and the still shows through, so
+ * there is never an empty frame.
+ */
+interface Props {
+  video?: string;
+  poster: string;
+  alt: string;
+  width: number;
+  height: number;
+  caption?: string;
+}
+const { video, poster, alt, width, height, caption } = Astro.props;
+---
+
+<figure class="hero-media" data-has-video={video ? 'true' : 'false'}>
+  {video && (
+    <video
+      class="hm-video"
+      src={video}
+      poster={poster}
+      width={width}
+      height={height}
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-label={alt}
+    />
+  )}
+  <img
+    class="hm-still"
+    src={poster}
+    width={width}
+    height={height}
+    alt={alt}
+    fetchpriority="high"
+    decoding="async"
+  />
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .hero-media { margin: var(--sp-12) 0 0; }
+
+  .hero-media :is(img, video) {
+    width: 100%;
+    height: auto;          /* paired with width/height attrs -> ratio reserved, CLS 0 */
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--rule);
+    background: var(--bg-sunken);
+  }
+
+  /* With a clip present, the still is only a fallback. */
+  .hero-media[data-has-video='true'] .hm-still { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-media[data-has-video='true'] .hm-video { display: none; }
+    .hero-media[data-has-video='true'] .hm-still { display: block; }
+  }
+
+  figcaption {
+    margin-top: var(--sp-3);
+    font-size: var(--step--1);
+    color: var(--text-faint);
+  }
+</style>
+
+<script>
+  // Some browsers begin autoplay before the media query takes effect.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll<HTMLVideoElement>('.hero-media .hm-video').forEach((v) => {
+      v.autoplay = false;
+      v.pause();
+    });
+  }
+</script>

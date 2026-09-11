@@ -1,0 +1,80 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Avatar from '../components/Avatar.astro';
+import Bio from '../components/Bio.astro';
+import Highlights from '../components/Highlights.astro';
+import Teaching from '../components/Teaching.astro';
+import { teaching } from '../data/teaching';
+import SocialLinks from '../components/SocialLinks.astro';
+import { site, emailDisplay } from '../config';
+import { personSchema } from '../lib/schema';
+---
+
+<Base schema={personSchema()}>
+  <Nav slot="nav" />
+
+  <header class="intro">
+    <div class="intro-aside">
+      <Avatar />
+      {site.email && <p class="contact">{emailDisplay}</p>}
+      <SocialLinks />
+    </div>
+
+    <div class="intro-body">
+      <p class="kicker">{site.subtitle}</p>
+      <Bio />
+      <p class="seeking">{site.seeking}</p>
+    </div>
+  </header>
+
+  <section class="band" aria-labelledby="highlights-heading">
+    <h2 id="highlights-heading" class="band-label">Highlights</h2>
+    <div class="band-body"><Highlights /></div>
+  </section>
+
+  {teaching.length > 0 && (
+    <section class="band" aria-labelledby="teaching-heading">
+      <h2 id="teaching-heading" class="band-label">Teaching</h2>
+      <div class="band-body"><Teaching /></div>
+    </section>
+  )}
+</Base>
+
+<style>
+  .intro {
+    display: grid;
+    grid-template-columns: var(--intro-col) minmax(0, 1fr);
+    gap: var(--sp-10);
+    align-items: start;
+    padding-bottom: var(--sp-16);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .contact {
+    margin-top: var(--sp-4);
+    color: var(--text-muted);
+    font-size: var(--step--1);
+    word-break: break-word;
+  }
+
+  .intro-body { min-width: 0; }
+
+  .kicker {
+    margin-top: var(--sp-4);
+    color: var(--text-muted);
+    font-size: var(--step--1);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+
+  .seeking {
+    margin-top: var(--sp-8);
+    color: var(--text-faint);
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 48rem) {
+    .intro { grid-template-columns: 1fr; gap: var(--sp-8); padding-bottom: var(--sp-12); }
+  }
+</style>

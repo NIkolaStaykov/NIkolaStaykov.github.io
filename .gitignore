@@ -1,0 +1,32 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# Working notes — kept local. These are not site content, and the repo has to be
+# public for free GitHub Pages, so a candid critique of the portfolio would sit
+# on the same profile a reader arrives from.
+/feedback/
+/PLAN.md
+/RESOURCES.md
+/REDESIGN.md

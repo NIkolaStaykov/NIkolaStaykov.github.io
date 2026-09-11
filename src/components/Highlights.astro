@@ -1,0 +1,47 @@
+---
+import { highlights } from '../data/highlights';
+
+const fmt = (d: string) =>
+  new Date(`${d}-01`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+---
+
+<ul class="news">
+  {highlights.map((n) => (
+    <li>
+      <time datetime={n.date}>{fmt(n.date)}</time>
+      <p>
+        {n.text}
+        {n.link && <> <a href={n.link.href}>{n.link.label}</a></>}
+      </p>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .news { list-style: none; padding: 0; margin: 0; }
+  /* First row shares a baseline with the band label in the gutter. */
+  .news li:first-child { padding-top: 0; }
+
+  .news li {
+    display: grid;
+    grid-template-columns: 4.75rem 1fr;
+    gap: var(--sp-5);
+    padding-block: var(--sp-3);
+    align-items: baseline;
+  }
+
+  .news time {
+    font-size: var(--step--2);
+    font-weight: 500;
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .news p { color: var(--text-muted); max-width: var(--measure); }
+
+  @media (max-width: 36rem) {
+    .news li { grid-template-columns: 1fr; gap: var(--sp-1); }
+  }
+</style>

@@ -1,0 +1,77 @@
+/*
+ * Design tokens.
+ *
+ * The site deliberately commits to one light look: a barely-there warm ground
+ * shading from near-white to the faintest caramel. No dark variant — the palette
+ * is the design, and a second theme would dilute it.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* --- Ground: white, very slightly yellow, drifting to faint caramel --- */
+  --bg-top:        #fefdfa;
+  --bg-bottom:     #f7efe3;
+  --bg:            #fdfbf6;   /* flat fallback, and for raised surfaces */
+  --bg-sunken:     #f6efe4;
+
+  /* --- Ink --- */
+  --text:          #1f1b16;
+  --text-muted:    #6b6259;
+  --text-faint:    #9a8f80;
+  --rule:          #e9e1d4;
+  --rule-strong:   #d9cfbe;
+  --accent:        #8a5a3b;
+  --accent-hover:  #6d452c;
+
+  /* --- Type --- */
+  /*
+   * Source Serif 4 + Source Sans 3 — one superfamily, drawn to the same
+   * skeleton and proportions. Pairing across families (Lora + Inter) is what
+   * made the old setting feel slightly off; harmony here is structural rather
+   * than a matter of taste.
+   *
+   * Mono is kept only for the BibTeX block, where character alignment matters.
+   * Dates and years use the sans with tabular figures instead, so the page
+   * carries two typefaces rather than three.
+   */
+  --font-sans: 'Source Sans 3', ui-sans-serif, -apple-system, BlinkMacSystemFont,
+               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Source Serif 4', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+               'Liberation Mono', monospace;
+
+  --step--2: clamp(0.74rem, 0.72rem + 0.08vw, 0.79rem);
+  --step--1: clamp(0.86rem, 0.83rem + 0.11vw, 0.93rem);
+  --step-0:  clamp(1rem, 0.97rem + 0.14vw, 1.06rem);
+  --step-1:  clamp(1.12rem, 1.05rem + 0.3vw, 1.28rem);
+  --step-2:  clamp(1.3rem, 1.18rem + 0.5vw, 1.6rem);
+  --step-3:  clamp(1.6rem, 1.35rem + 1.1vw, 2.2rem);
+  --step-4:  clamp(2.3rem, 1.7rem + 2.6vw, 3.4rem);
+
+  --measure: 38rem;          /* shorter line, easier to read */
+  --leading: 1.78;           /* generous — paragraphs need air */
+
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+  --sp-20: 5rem;
+  --sp-28: 7rem;
+
+  --gutter: clamp(1.5rem, 5vw, 2rem);
+  --page-max: 58rem;
+  --gutter-col: 150px;
+  --intro-col: 200px;
+
+  --radius: 4px;
+  --radius-lg: 6px;
+
+  --transition: 150ms ease;
+}

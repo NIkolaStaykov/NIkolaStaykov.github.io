@@ -1,0 +1,28 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Nav from '../../components/Nav.astro';
+import PubRow from '../../components/PubRow.astro';
+import { scholarlyArticleSchema } from '../../lib/schema';
+
+const papers = (await getCollection('research', (p) => !p.data.draft))
+  .sort((a, b) => b.data.year - a.data.year);
+---
+
+<Base
+  title="Publications"
+  description="Publications and research output by Nikola Staykov."
+  schema={papers.map(scholarlyArticleSchema)}
+>
+  <Nav slot="nav" />
+  <section class="band">
+    <h1 class="band-label">Publications</h1>
+    <div class="band-body pubs">
+      {papers.map((entry) => <PubRow entry={entry} />)}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .pubs { display: grid; gap: var(--sp-5); }
+</style>

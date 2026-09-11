@@ -1,0 +1,66 @@
+---
+import { site } from '../config';
+
+/** Page links, not section anchors — content lives on its own URLs now. */
+const links = [
+  { href: '/', label: 'About' },
+  { href: '/projects/', label: 'Projects' },
+  { href: '/research/', label: 'Publications' },
+  { href: '/cv.pdf', label: 'CV' },
+];
+const here = Astro.url.pathname;
+const isHome = here === '/';
+---
+
+<nav class="nav" aria-label="Primary">
+  <div class="nav-inner">
+    {isHome
+      ? <h1 class="nav-name">{site.name}</h1>
+      : <a href="/" class="nav-name">{site.name}</a>}
+    <ul class="nav-links">
+      {links.map((l) => (
+        <li>
+          <a href={l.href} aria-current={here === l.href ? 'page' : undefined}>{l.label}</a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</nav>
+
+<style>
+  .nav { margin-bottom: var(--sp-16); }
+  /* Constrained to the same column as the body — a full-bleed header above a
+     narrow column reads as two unrelated pieces. */
+  .nav-inner {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-6);
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .nav-name {
+    font-family: var(--font-serif);
+    font-size: var(--step-0);
+    font-weight: 600;
+    line-height: inherit;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-links {
+    display: flex;
+    flex-wrap: wrap;          /* without this the row cannot shrink below its
+                                 min-content width and stretches the document,
+                                 which every width:100% ancestor then sizes to */
+    gap: var(--sp-2) var(--sp-6);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--step--1);
+    min-width: 0;
+  }
+  .nav-links a { color: var(--text-muted); text-decoration: none; }
+  .nav-links a[aria-current='page'] { color: var(--text); }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-links a[aria-current='page'] { color: var(--text); }
+</style>

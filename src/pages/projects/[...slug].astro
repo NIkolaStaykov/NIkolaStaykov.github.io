@@ -1,0 +1,125 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Nav from '../../components/Nav.astro';
+import HeroMedia from '../../components/HeroMedia.astro';
+import { softwareSourceCodeSchema } from '../../lib/schema';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects', (p) => !p.data.draft);
+  return projects.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+
+const labels: Record<string, string> = {
+  code: 'Code', paper: 'Paper', video: 'Video', demo: 'Project page',
+};
+const links = Object.entries(d.links).filter(([, v]) => Boolean(v)) as [string, string][];
+const iso = (dt: Date) => dt.toISOString().slice(0, 10);
+---
+
+<Base title={d.title} description={d.summary} schema={softwareSourceCodeSchema(entry)}>
+  <Nav slot="nav" />
+
+  <article>
+    <header class="head">
+      <h1>{d.title}</h1>
+      <p class="lead">{d.summary}</p>
+      {links.length > 0 && (
+        <ul class="linkrow">
+          {links.map(([k, v]) => <li><a href={v}>{labels[k] ?? k}</a></li>)}
+        </ul>
+      )}
+    </header>
+
+    {(d.media?.video || d.thumb) && (
+      <div class="media">
+        <HeroMedia
+          video={d.media?.video || undefined}
+          poster={d.media?.poster?.src ?? d.thumb!}
+          alt={d.media?.alt ?? d.title}
+          width={1440}
+          height={1080}
+        />
+      </div>
+    )}
+
+    <section class="band">
+      <h2 class="band-label">Details</h2>
+      <dl class="band-body facts">
+        <dt>Role</dt>
+        <dd>{d.role}</dd>
+        {d.collaborators.length > 0 && (<><dt>With</dt><dd>{d.collaborators.join(', ')}</dd></>)}
+        <dt>Stack</dt>
+        <dd>{d.stack.join(' · ')}</dd>
+        <dt>Date</dt>
+        <dd>
+          <time datetime={iso(d.startDate)}>{d.startDate.getFullYear()}</time>
+          {d.updatedDate && <> · updated <time datetime={iso(d.updatedDate)}>{iso(d.updatedDate)}</time></>}
+        </dd>
+      </dl>
+    </section>
+
+    {d.result && (
+      <section class="band reveal">
+        <h2 class="band-label">Result</h2>
+        <div class="band-body"><p class="measure">{d.result}</p></div>
+      </section>
+    )}
+
+    {d.hardPart && (
+      <section class="band reveal">
+        <h2 class="band-label">What was hard</h2>
+        <div class="band-body"><p class="measure">{d.hardPart}</p></div>
+      </section>
+    )}
+
+    <section class="band">
+      <h2 class="band-label">Notes</h2>
+      <div class="band-body prose"><Content /></div>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .head { padding-bottom: var(--sp-8); border-bottom: 1px solid var(--rule); }
+  h1 { font-size: var(--step-3); }
+  .lead {
+    margin-top: var(--sp-4);
+    max-width: var(--measure);
+    font-size: var(--step-1);
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .media { margin-block: var(--sp-8); }
+
+  .facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--sp-2) var(--sp-6);
+    margin: 0;
+    font-size: var(--step--1);
+  }
+  .facts dt {
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+  }
+  .facts dd { margin: 0; color: var(--text-muted); max-width: var(--measure); }
+
+  .prose { max-width: var(--measure); color: var(--text-muted); }
+  .prose :global(img) {
+    margin-block: var(--sp-6);
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
+  }
+
+  @media (max-width: 36rem) {
+    .facts { grid-template-columns: 1fr; gap: var(--sp-1); }
+    .facts dd { margin-bottom: var(--sp-3); }
+  }
+</style>

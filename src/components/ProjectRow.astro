@@ -1,0 +1,40 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props { entry: CollectionEntry<'projects'>; }
+const { entry } = Astro.props;
+const d = entry.data;
+
+const labels: Record<string, string> = {
+  code: 'Code', paper: 'Paper', video: 'Video', demo: 'Project page',
+};
+const links = Object.entries(d.links).filter(([, v]) => Boolean(v)) as [string, string][];
+const href = `/projects/${entry.id}/`;
+---
+
+<li class="row reveal">
+  {d.thumb
+    ? <img class="row-thumb" src={d.thumb} alt="" loading="lazy" decoding="async" />
+    : <div class="row-thumb row-thumb--empty" aria-hidden="true"></div>}
+
+  <div>
+    <h3><a href={href}>{d.title}</a></h3>
+    <p class="summary">{d.summary}</p>
+    <p class="meta">
+      <time datetime={d.startDate.toISOString().slice(0, 10)}>{d.startDate.getFullYear()}</time>
+      {d.collaborators.length > 0 && <> · with {d.collaborators.length} others</>}
+    </p>
+    <ul class="linkrow">
+      <li><a href={href}>Details</a></li>
+      {links.map(([k, v]) => <li><a href={v}>{labels[k] ?? k}</a></li>)}
+    </ul>
+  </div>
+</li>
+
+<style>
+  h3 { font-size: var(--step-1); }
+  h3 a { color: var(--text); text-decoration: none; }
+  h3 a:hover { color: var(--accent); }
+  .summary { margin-top: var(--sp-2); color: var(--text-muted); }
+  .meta { margin-top: var(--sp-2); font-size: var(--step--1); color: var(--text-faint); }
+</style>

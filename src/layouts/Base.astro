@@ -1,0 +1,74 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import { site } from '../config';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /**
+   * Page-specific JSON-LD. Home injects Person; content pages inject their own.
+   * Accepts an array for pages describing several entities (e.g. a paper list).
+   */
+  schema?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const { title, description = site.tagline, schema } = Astro.props;
+const pageTitle = title ? `${title} — ${site.name}` : `${site.name} — Robotics Researcher`;
+const canonical = new URL(Astro.url.pathname, site.url).href;
+const schemas = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap"
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {schemas.map((s) => (
+      <script type="application/ld+json" set:html={JSON.stringify(s)} />
+    ))}
+
+    <ClientRouter />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <main id="main" class="page">
+      <slot name="nav" />
+      <slot />
+      <footer class="site-footer">
+        <p>© {new Date().getFullYear()} {site.name}</p>
+        <p>{site.location.city}, {site.location.country}</p>
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style>
+  .site-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+    padding-top: var(--sp-8);
+    color: var(--text-faint);
+    font-size: var(--step--2);
+  }
+</style>

@@ -1,0 +1,81 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { site } from '../config';
+
+/**
+ * Year in the gutter, then title / authors / venue — the format used by the
+ * citation-forward reference sites. No thumbnail here on purpose: a publication
+ * list is read for scanning and citing, and images slow that down. Thumbnails
+ * belong on the projects index, where the media is the argument.
+ */
+interface Props { entry: CollectionEntry<'research'>; }
+const { entry } = Astro.props;
+const d = entry.data;
+
+const labels: Record<string, string> = { pdf: 'PDF', arxiv: 'arXiv', doi: 'DOI', code: 'Code' };
+const links = Object.entries(d.links).filter(([, v]) => Boolean(v)) as [string, string][];
+const bibId = `bib-${entry.id}`;
+const primary = d.links.doi ?? d.links.arxiv ?? d.links.pdf;
+---
+
+<article class="pub reveal">
+  <div class="pub-year">{d.year}</div>
+  <div>
+    <h3 class="pub-title">
+      {primary ? <a href={primary}>{d.title}</a> : d.title}
+    </h3>
+    <p class="pub-authors">
+      {d.authors.map((a, i) => (
+        <>{i > 0 && ', '}{a === site.name ? <span class="author-me">{a}</span> : a}</>
+      ))}
+    </p>
+    <p class="pub-venue">
+      {/* Year lives in the gutter — repeating it here is noise. */}
+      {d.venue}
+      {d.status !== 'published' && <> · <span class="status">{d.status}</span></>}
+    </p>
+    {d.supervisors.length > 0 && (
+      <p class="pub-venue">Supervised by {d.supervisors.join(', ')}</p>
+    )}
+
+    <ul class="linkrow">
+      {links.map(([k, v]) => <li><a href={v}>{labels[k] ?? k}</a></li>)}
+      {d.projectSlug && <li><a href={`/projects/${d.projectSlug}/`}>Project</a></li>}
+      {d.bibtex && <li><a href={`#${bibId}`} data-bib={bibId}>BibTeX</a></li>}
+    </ul>
+
+    {d.bibtex && <pre id={bibId} class="bib" hidden><code>{d.bibtex}</code></pre>}
+  </div>
+</article>
+
+<style>
+  .pub-title { margin-bottom: 3px; font-size: var(--step-0); font-weight: 600; }
+  .pub-title a { text-decoration: none; }
+  .pub-authors, .pub-venue {
+    color: var(--text-muted);
+    font-size: var(--step--1);
+    line-height: 1.5;
+  }
+  .author-me { text-decoration: underline; text-underline-offset: 3px; }
+  .pub-venue { margin-top: 2px; }
+  .status { font-style: italic; }
+  .bib {
+    margin-top: var(--sp-3);
+    background: var(--bg-sunken);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: var(--sp-4);
+    overflow-x: auto;
+    font-size: var(--step--2);
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('a[data-bib]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const el = document.getElementById(a.dataset.bib!);
+      if (el) el.hidden = !el.hidden;
+    });
+  });
+</script>

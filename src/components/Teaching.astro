@@ -1,0 +1,26 @@
+---
+import { teaching } from '../data/teaching';
+---
+
+<p class="note">I served as a teaching or lab assistant for the following courses.</p>
+<ul class="teaching-list">
+  {teaching.map((t) => (
+    <li>
+      {t.course}
+      {' '}
+      ({t.url ? <a href={t.url}>{t.term}</a> : t.term})
+    </li>
+  ))}
+</ul>
+
+<style>
+  .note { color: var(--text-muted); max-width: var(--measure); }
+  .teaching-list {
+    margin: var(--sp-5) 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+    max-width: var(--measure);
+  }
+  .teaching-list li { margin: 0 0 var(--sp-2); }
+</style>

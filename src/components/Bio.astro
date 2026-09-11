@@ -1,0 +1,40 @@
+---
+/**
+ * General interests and affiliations only — no project specifics, no list of
+ * contributions. The work itself is one click away on /projects and /research;
+ * repeating it here just makes the landing page a CV again.
+ *
+ * The affiliation lives in the kicker (site.subtitle), so the lead must not
+ * restate it — with the large title gone the two sit adjacent and any overlap
+ * reads as duplication.
+ *
+ * NOTE: never start a source line with <a>. Astro strips the leading whitespace
+ * and glues the link to the preceding word.
+ */
+---
+
+<p class="lead">
+  I work on dexterous manipulation, with broader interests in reinforcement learning,
+  imitation learning, and simulation.
+</p>
+
+<p class="intro-copy">
+  I'm advised by <a href="https://crl.ethz.ch/people/coros/index.html">Prof. Stelian
+  Coros</a> and <a href="https://chrismavrogiannis.com/">Prof. Christoforos
+  Mavrogiannis</a>. Previously I worked with the <a href="https://www.dynsyslab.org/">Dynamic
+  Systems Lab</a> at UTIAS, led by Prof. Angela Schoellig, and in industry at <a href="https://www.sevensense.ai">Sevensense
+  at ABB</a> and Data Machine Intelligence.
+</p>
+
+<style>
+  /* One size across the whole block — hierarchy comes from colour alone. */
+  .lead {
+    max-width: var(--measure);
+    margin-top: var(--sp-6);
+  }
+  .intro-copy {
+    max-width: var(--measure);
+    margin-top: var(--sp-6);
+    color: var(--text-muted);
+  }
+</style>
