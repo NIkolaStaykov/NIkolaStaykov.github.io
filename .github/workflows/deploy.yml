@@ -23,6 +23,9 @@ jobs:
       # Runs `npm ci` and `npm run build`, which includes scripts/check-build.mjs,
       # so a dead link or a glued-together anchor fails CI rather than shipping.
       - uses: withastro/action@v3
+        with:
+          # The action defaults to Node 20; Astro 7 requires >=22.12.0.
+          node-version: 22
 
   deploy:
     needs: build
