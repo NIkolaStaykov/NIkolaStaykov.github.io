@@ -1,0 +1,14 @@
+name = "visitor-ping"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# Only beacons from this origin are accepted.
+ALLOWED_ORIGIN = "https://nikolastaykov.github.io"
+
+# Secrets are NOT set here. Use:
+#   npx wrangler secret put WHATSAPP_TO        # e.g. 41791234567 (no + or spaces)
+#   npx wrangler secret put CALLMEBOT_APIKEY   # simple route
+# or, for the official API:
+#   npx wrangler secret put META_TOKEN
+#   npx wrangler secret put META_PHONE_ID

@@ -1,0 +1,29 @@
+---
+import { site } from '../config';
+
+/**
+ * Fire-and-forget beacon. Renders nothing and blocks nothing; if the Worker is
+ * down or blocked the page is unaffected.
+ *
+ * Sends the path and nothing else — the Worker adds no visitor data to the
+ * notification. Do-Not-Track is checked here as well as in the Worker.
+ */
+const endpoint = site.pingEndpoint;
+---
+
+{endpoint && (
+  <script is:inline define:vars={{ endpoint }}>
+    try {
+      if (navigator.doNotTrack !== '1' && window.doNotTrack !== '1') {
+        fetch(endpoint, {
+          method: 'POST',
+          keepalive: true,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: location.pathname }),
+        }).catch(() => {});
+      }
+    } catch (e) {
+      /* never let analytics break the page */
+    }
+  </script>
+)}
