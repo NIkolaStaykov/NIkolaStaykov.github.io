@@ -29,9 +29,17 @@ const HONOUR_DNT = true;
 const BOT_RE =
   /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegram|preview|monitor|uptime|curl|wget|python-requests|headless|lighthouse|gtmetrix|pingdom|semrush|ahrefs|mj12|dotbot|petal|bytespider|gptbot|claudebot|perplexity|ccbot/i;
 
-/** Salted SHA-256, truncated. Salt rotates daily so hashes are not stable. */
-async function dedupKey(ip) {
-  const salt = new Date().toISOString().slice(0, 10);
+/**
+ * Salted SHA-256, truncated.
+ *
+ * The date component rotates the value daily. The HASH_SALT secret is what
+ * makes it irreversible: IPv4 is only 2^32 addresses, so a hash salted with a
+ * publicly-known value alone can be brute-forced in seconds. With a secret
+ * salt it cannot be, which is the difference between pseudonymous and
+ * effectively anonymous.
+ */
+async function dedupKey(ip, env) {
+  const salt = `${env.HASH_SALT || ''}:${new Date().toISOString().slice(0, 10)}`;
   const data = new TextEncoder().encode(`${salt}:${ip}`);
   const digest = await crypto.subtle.digest('SHA-256', data);
   return [...new Uint8Array(digest)]
@@ -63,7 +71,7 @@ export default {
 
     // The IP lives only inside this block, only as a hash, and is never sent on.
     const key = new Request(
-      `https://ping.invalid/seen/${await dedupKey(request.headers.get('CF-Connecting-IP') || '')}`,
+      `https://ping.invalid/seen/${await dedupKey(request.headers.get('CF-Connecting-IP') || '', env)}`,
     );
     const cache = caches.default;
     if (await cache.match(key)) return new Response(null, { status: 204, headers: cors });

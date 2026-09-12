@@ -56,12 +56,6 @@ const schemas = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
       <slot />
       <footer class="site-footer">
         <p>© {new Date().getFullYear()} {site.name}</p>
-        {site.pingEndpoint && (
-          <p class="notice">
-            Opening a page notifies me that someone visited. The notification contains the
-            page address and nothing else — no IP, no location, nothing stored.
-          </p>
-        )}
         <p>{site.location.city}, {site.location.country}</p>
       </footer>
       <VisitorPing />
@@ -70,7 +64,6 @@ const schemas = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
 </html>
 
 <style>
-  .site-footer .notice { max-width: 34rem; }
   .site-footer {
     display: flex;
     justify-content: space-between;

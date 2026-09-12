@@ -2,12 +2,21 @@
 
 Pings Telegram or WhatsApp when someone opens the site.
 
-The notification contains **the page path and nothing else** — no IP, no location,
-no network, no referrer. The Worker unavoidably receives the visitor's IP, because
-it arrives with the connection as it does for any server, but it is never
-transmitted, logged, or stored in recoverable form: it is salted and hashed once,
-used only to avoid pinging you four times for one person reading four pages, and
-the salt rotates daily.
+The notification is the words **"Someone dropped by"** and nothing else — no IP, no
+location, no network, no referrer, not even the page path.
+
+The Worker unavoidably receives the visitor's IP, because it arrives with the
+connection as it does for any server, but it is never transmitted and never logged.
+It is hashed once with a secret, daily-rotating salt and used only to avoid pinging
+you four times for one person reading four pages.
+
+The secret matters: IPv4 is only 2^32 addresses, so a hash salted with a
+publicly-known value can be brute-forced in seconds. Set `HASH_SALT` to a random
+value and it cannot be:
+
+```sh
+python3 -c "import secrets;print(secrets.token_hex(32))" | npx wrangler secret put HASH_SALT
+```
 
 Bots are dropped — most traffic to a personal site is automated, and without the
 filter your phone is unusable.
