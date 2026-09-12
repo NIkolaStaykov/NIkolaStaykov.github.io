@@ -60,7 +60,7 @@ export const site = {
    * the Worker in worker/ is deployed; the beacon and the disclosure line both
    * stay off while it is empty. See worker/README.md.
    */
-  pingEndpoint: '',
+  pingEndpoint: 'https://visitor-ping.nikolastaykov.workers.dev',
 
   /** One line under the name. Role first, subject second. */
   subtitle: 'MSc Robotics at ETH',

@@ -5,8 +5,8 @@
  * this Worker forwards a notification to Telegram or WhatsApp, whichever is
  * configured.
  *
- * What the notification contains: the page path, and nothing else. No IP, no
- * location, no network, no referrer. Nothing in the message identifies anyone.
+ * What the notification contains: the words "Someone dropped by", and nothing
+ * else. No IP, no location, no network, no referrer, not even the page path.
  *
  * The Worker unavoidably *receives* the visitor's IP — it arrives with the
  * connection, as it does for any server — but it is never transmitted, never
@@ -82,7 +82,9 @@ export default {
       /* body is optional */
     }
 
-    ctx.waitUntil(send(`Someone opened your site — ${page}`, env));
+    // Message text. `page` is available here if you ever want it appended —
+    // it is a path, not visitor data.
+    ctx.waitUntil(send('Someone dropped by', env));
     return new Response(null, { status: 204, headers: cors });
   },
 };
