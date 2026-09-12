@@ -2,7 +2,8 @@
  * Visitor ping — Cloudflare Worker.
  *
  * The site is static, so it cannot hold an API token. The page beacons here and
- * this Worker forwards a notification to WhatsApp.
+ * this Worker forwards a notification to Telegram or WhatsApp, whichever is
+ * configured.
  *
  * What the notification contains: the page path, and nothing else. No IP, no
  * location, no network, no referrer. Nothing in the message identifies anyone.
@@ -87,15 +88,31 @@ export default {
 };
 
 /**
- * Sender is chosen by whichever secrets are set.
+ * Sender is chosen by whichever secrets are set, in this order.
  *
- * CallMeBot  — minutes to set up, fine for pinging yourself.
- * Meta Cloud — official WhatsApp Business API. More setup, and free-form
- *              messages only send inside a 24h window, so after an idle spell
- *              you need an approved template instead.
+ * Telegram   — official API, no approval, and no sending window. Best fit for
+ *              an unprompted notification bot, which is why it goes first.
+ * CallMeBot  — WhatsApp in minutes, but a third-party relay with no SLA.
+ * Meta Cloud — official WhatsApp Business API. Free-form messages only deliver
+ *              inside a 24h window opened by you messaging the business number,
+ *              so after an idle spell this silently stops working unless you
+ *              use an approved template.
  */
 async function send(text, env) {
   try {
+    if (env.TELEGRAM_TOKEN && env.TELEGRAM_CHAT_ID) {
+      await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: env.TELEGRAM_CHAT_ID,
+          text,
+          disable_notification: false,
+          link_preview_options: { is_disabled: true },
+        }),
+      });
+      return;
+    }
     if (env.CALLMEBOT_APIKEY && env.WHATSAPP_TO) {
       await fetch(
         `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(env.WHATSAPP_TO)}` +

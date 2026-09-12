@@ -1,6 +1,6 @@
 # Visitor ping
 
-Pings WhatsApp when someone opens the site.
+Pings Telegram or WhatsApp when someone opens the site.
 
 The notification contains **the page path and nothing else** — no IP, no location,
 no network, no referrer. The Worker unavoidably receives the visitor's IP, because
@@ -14,9 +14,26 @@ filter your phone is unusable.
 
 ## Setup
 
-Two choices for sending. CallMeBot is the short route.
+Three senders. The Worker uses whichever secrets are set, preferring Telegram,
+then CallMeBot, then Meta.
 
-### 1. WhatsApp — CallMeBot
+### 1. Telegram — recommended
+
+Two minutes, no approval, and no sending window.
+
+1. Message **@BotFather**, send `/newbot`, follow the prompts. It gives you a
+   token like `8123456789:AAH...`.
+2. Open a chat with your new bot and send it anything — a bot cannot message you
+   until you have started the conversation.
+3. Get your chat id:
+
+   ```sh
+   curl -s "https://api.telegram.org/bot<TOKEN>/getUpdates" | grep -o '"id":[0-9-]*' | head -1
+   ```
+
+That id and the token are the two secrets.
+
+### 1a. WhatsApp — CallMeBot
 
 1. Add **+34 644 51 95 23** to your contacts.
 2. Send it: `I allow callmebot to send me messages`
@@ -33,10 +50,20 @@ permanent token. More setup, and note that free-form messages only deliver insid
 ```sh
 cd worker
 npx wrangler login
-npx wrangler secret put WHATSAPP_TO        # 41791234567 — no +, no spaces
-npx wrangler secret put CALLMEBOT_APIKEY   # or META_TOKEN + META_PHONE_ID
+
+# Telegram:
+npx wrangler secret put TELEGRAM_TOKEN
+npx wrangler secret put TELEGRAM_CHAT_ID
+
+# …or WhatsApp:
+# npx wrangler secret put WHATSAPP_TO        # 41791234567 — no +, no spaces
+# npx wrangler secret put CALLMEBOT_APIKEY   # or META_TOKEN + META_PHONE_ID
+
 npx wrangler deploy
 ```
+
+Switching later means setting different secrets and redeploying — the site does
+not change.
 
 Wrangler prints the Worker URL.
 
