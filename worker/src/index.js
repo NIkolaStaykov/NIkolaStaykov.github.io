@@ -5,8 +5,9 @@
  * this Worker forwards a notification to Telegram or WhatsApp, whichever is
  * configured.
  *
- * What the notification contains: the words "Someone dropped by", and nothing
- * else. No IP, no location, no network, no referrer, not even the page path.
+ * What the notification contains: the words "Someone dropped by", a running
+ * count of distinct visitors so far today, and nothing else. No IP, no
+ * location, no network, no referrer, not even the page path.
  *
  * The Worker unavoidably *receives* the visitor's IP — it arrives with the
  * connection, as it does for any server — but it is never transmitted, never
@@ -26,26 +27,74 @@
 const DEDUP_HOURS = 6;
 const HONOUR_DNT = true;
 
+// The day the counter runs on. Europe/Zurich is CET, and shifts to CEST with
+// daylight saving, so the reset always lands on local midnight rather than
+// drifting an hour in summer. Override with the TIMEZONE var.
+const DEFAULT_TIMEZONE = 'Europe/Zurich';
+
 const BOT_RE =
   /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegram|preview|monitor|uptime|curl|wget|python-requests|headless|lighthouse|gtmetrix|pingdom|semrush|ahrefs|mj12|dotbot|petal|bytespider|gptbot|claudebot|perplexity|ccbot/i;
 
 /**
+ * Today's date as YYYY-MM-DD in the configured zone.
+ *
+ * This is the only definition of "a day" in the Worker: it rotates the hash
+ * salt and it is what the visitor counter resets on, so both boundaries move
+ * together at local midnight.
+ */
+function dayStamp(env) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: env.TIMEZONE || DEFAULT_TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+/**
  * Salted SHA-256, truncated.
  *
- * The date component rotates the value daily. The HASH_SALT secret is what
+ * The day component rotates the value daily. The HASH_SALT secret is what
  * makes it irreversible: IPv4 is only 2^32 addresses, so a hash salted with a
  * publicly-known value alone can be brute-forced in seconds. With a secret
  * salt it cannot be, which is the difference between pseudonymous and
  * effectively anonymous.
  */
-async function dedupKey(ip, env) {
-  const salt = `${env.HASH_SALT || ''}:${new Date().toISOString().slice(0, 10)}`;
+async function dedupKey(ip, day, env) {
+  const salt = `${env.HASH_SALT || ''}:${day}`;
   const data = new TextEncoder().encode(`${salt}:${ip}`);
   const digest = await crypto.subtle.digest('SHA-256', data);
   return [...new Uint8Array(digest)]
     .slice(0, 16)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+/**
+ * Ask the counter how many distinct visitors there have been today, recording
+ * this one first.
+ *
+ * Returns null if the Durable Object is unavailable — a missing count must
+ * never cost you the notification itself.
+ */
+async function countVisitor(hash, day, env) {
+  if (!env.VISITOR_COUNTER) return null;
+  try {
+    const id = env.VISITOR_COUNTER.idFromName('daily');
+    const stub = env.VISITOR_COUNTER.get(id);
+    const res = await stub.fetch('https://counter.invalid/hit', {
+      method: 'POST',
+      body: JSON.stringify({ day, hash }),
+    });
+    const { count } = await res.json();
+    return typeof count === 'number' ? count : null;
+  } catch {
+    return null;
+  }
 }
 
 export default {
@@ -70,9 +119,10 @@ export default {
     }
 
     // The IP lives only inside this block, only as a hash, and is never sent on.
-    const key = new Request(
-      `https://ping.invalid/seen/${await dedupKey(request.headers.get('CF-Connecting-IP') || '', env)}`,
-    );
+    const day = dayStamp(env);
+    const hash = await dedupKey(request.headers.get('CF-Connecting-IP') || '', day, env);
+
+    const key = new Request(`https://ping.invalid/seen/${hash}`);
     const cache = caches.default;
     if (await cache.match(key)) return new Response(null, { status: 204, headers: cors });
     ctx.waitUntil(
@@ -92,57 +142,52 @@ export default {
 
     // Message text. `page` is available here if you ever want it appended —
     // it is a path, not visitor data.
-    ctx.waitUntil(send('Someone dropped by', env));
+    ctx.waitUntil(
+      countVisitor(hash, day, env).then((count) =>
+        send(
+          count === null
+            ? 'Someone dropped by'
+            : `Someone dropped by — ${count} ${count === 1 ? 'visitor' : 'visitors'} today`,
+          env,
+        ),
+      ),
+    );
     return new Response(null, { status: 204, headers: cors });
   },
 };
 
 /**
- * Sender is chosen by whichever secrets are set, in this order.
+ * Distinct-visitor counter for the current day.
  *
- * Telegram   — official API, no approval, and no sending window. Best fit for
- *              an unprompted notification bot, which is why it goes first.
- * CallMeBot  — WhatsApp in minutes, but a third-party relay with no SLA.
- * Meta Cloud — official WhatsApp Business API. Free-form messages only deliver
- *              inside a 24h window opened by you messaging the business number,
- *              so after an idle spell this silently stops working unless you
- *              use an approved template.
+ * A Durable Object rather than KV or the cache because this has to be one
+ * number: the cache is per-colocation, so a visitor in Frankfurt and one in
+ * Zurich would be counted against different tallies, and KV has no atomic
+ * increment. Every ping goes through the single instance named "daily", which
+ * a personal site's traffic will not trouble.
+ *
+ * Storage holds the day it is counting, the tally, and one key per visitor
+ * hash seen. When the day rolls over the whole lot is dropped — so yesterday's
+ * hashes are not merely unlinkable, they are gone.
  */
-async function send(text, env) {
-  try {
-    if (env.TELEGRAM_TOKEN && env.TELEGRAM_CHAT_ID) {
-      await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: env.TELEGRAM_CHAT_ID,
-          text,
-          disable_notification: false,
-          link_preview_options: { is_disabled: true },
-        }),
-      });
-      return;
+export class VisitorCounter {
+  constructor(state) {
+    this.storage = state.storage;
+  }
+
+  async fetch(request) {
+    const { day, hash } = await request.json();
+
+    if ((await this.storage.get('day')) !== day) {
+      await this.storage.deleteAll();
+      await this.storage.put({ day, count: 0 });
     }
-    if (env.CALLMEBOT_APIKEY && env.WHATSAPP_TO) {
-      await fetch(
-        `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(env.WHATSAPP_TO)}` +
-          `&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(env.CALLMEBOT_APIKEY)}`,
-      );
-      return;
+
+    if (!(await this.storage.get(`v:${hash}`))) {
+      const count = ((await this.storage.get('count')) || 0) + 1;
+      await this.storage.put({ [`v:${hash}`]: 1, count });
+      return Response.json({ count });
     }
-    if (env.META_TOKEN && env.META_PHONE_ID && env.WHATSAPP_TO) {
-      await fetch(`https://graph.facebook.com/v21.0/${env.META_PHONE_ID}/messages`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${env.META_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: env.WHATSAPP_TO,
-          type: 'text',
-          text: { body: text },
-        }),
-      });
-    }
-  } catch {
-    // A failed notification must never affect the visitor.
+
+    return Response.json({ count: (await this.storage.get('count')) || 0 });
   }
 }

@@ -6,6 +6,19 @@ compatibility_date = "2026-01-01"
 # Only beacons from this origin are accepted.
 ALLOWED_ORIGIN = "https://nikolastaykov.github.io"
 
+# The zone the daily visitor count resets in, at local midnight. Europe/Zurich
+# is CET, and follows the summer shift to CEST.
+TIMEZONE = "Europe/Zurich"
+
+# Counts distinct visitors per day. Free tier; no setup beyond deploying.
+[[durable_objects.bindings]]
+name = "VISITOR_COUNTER"
+class_name = "VisitorCounter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["VisitorCounter"]
+
 # Secrets are NOT set here. Pick one sender.
 #
 # Telegram (recommended — no approval, no sending window):

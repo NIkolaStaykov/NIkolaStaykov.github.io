@@ -2,8 +2,10 @@
 
 Pings Telegram or WhatsApp when someone opens the site.
 
-The notification is the words **"Someone dropped by"** and nothing else — no IP, no
-location, no network, no referrer, not even the page path.
+The notification is **"Someone dropped by — 4 visitors today"** and nothing else —
+no IP, no location, no network, no referrer, not even the page path. The count is
+distinct visitors since local midnight, so each message tells you where the day
+stands.
 
 The Worker unavoidably receives the visitor's IP, because it arrives with the
 connection as it does for any server, but it is never transmitted and never logged.
@@ -20,6 +22,12 @@ python3 -c "import secrets;print(secrets.token_hex(32))" | npx wrangler secret p
 
 Bots are dropped — most traffic to a personal site is automated, and without the
 filter your phone is unusable.
+
+The count lives in a Durable Object holding today's date, the tally, and the hashes
+seen so far. It has to be one object rather than KV or the cache: the cache is
+per-colocation, so visitors arriving in different cities would be counted against
+different tallies, and KV has no atomic increment. At midnight in `TIMEZONE` the
+day rolls over and the whole store is dropped, tally and hashes together.
 
 ## Setup
 
@@ -86,11 +94,18 @@ entirely inert.
 
 In `worker/src/index.js`:
 
-- `DEDUP_HOURS` — one ping per visitor per this many hours. Default 6.
+- `DEDUP_HOURS` — one ping per visitor per this many hours. Default 6. Note this
+  is separate from the daily count: a visitor returning after six hours pings you
+  again but does not raise the tally, because they are not a *distinct* visitor.
 - `HONOUR_DNT` — set false to ping regardless of Do-Not-Track.
 - `BOT_RE` — add patterns if something noisy gets through.
 
+In `worker/wrangler.toml`:
+
+- `TIMEZONE` — the zone the daily count resets in, at local midnight. Default
+  `Europe/Zurich`, which is CET and follows the summer shift to CEST.
+
 ## Cost
 
-Cloudflare Workers' free tier is 100k requests/day. A personal site will not
-approach it.
+Cloudflare Workers' free tier is 100k requests/day, and Durable Objects are
+included in it. A personal site will not approach either.

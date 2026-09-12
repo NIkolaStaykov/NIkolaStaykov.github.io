@@ -35,3 +35,6 @@ pnpm-debug.log*
 *token*.txt
 *.secret
 .dev.vars
+
+# wrangler local state — dev cache and local Durable Object storage
+worker/.wrangler/
