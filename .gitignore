@@ -30,3 +30,8 @@ pnpm-debug.log*
 /PLAN.md
 /RESOURCES.md
 /REDESIGN.md
+
+# Secrets — never commit. This repo is public.
+*token*.txt
+*.secret
+.dev.vars
