@@ -191,3 +191,53 @@ export class VisitorCounter {
     return Response.json({ count: (await this.storage.get('count')) || 0 });
   }
 }
+
+/**
+ * Sender is chosen by whichever secrets are set, in this order.
+ *
+ * Telegram   — official API, no approval, and no sending window. Best fit for
+ *              an unprompted notification bot, which is why it goes first.
+ * CallMeBot  — WhatsApp in minutes, but a third-party relay with no SLA.
+ * Meta Cloud — official WhatsApp Business API. Free-form messages only deliver
+ *              inside a 24h window opened by you messaging the business number,
+ *              so after an idle spell this silently stops working unless you
+ *              use an approved template.
+ */
+async function send(text, env) {
+  try {
+    if (env.TELEGRAM_TOKEN && env.TELEGRAM_CHAT_ID) {
+      await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: env.TELEGRAM_CHAT_ID,
+          text,
+          disable_notification: false,
+          link_preview_options: { is_disabled: true },
+        }),
+      });
+      return;
+    }
+    if (env.CALLMEBOT_APIKEY && env.WHATSAPP_TO) {
+      await fetch(
+        `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(env.WHATSAPP_TO)}` +
+          `&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(env.CALLMEBOT_APIKEY)}`,
+      );
+      return;
+    }
+    if (env.META_TOKEN && env.META_PHONE_ID && env.WHATSAPP_TO) {
+      await fetch(`https://graph.facebook.com/v21.0/${env.META_PHONE_ID}/messages`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${env.META_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: env.WHATSAPP_TO,
+          type: 'text',
+          text: { body: text },
+        }),
+      });
+    }
+  } catch {
+    // A failed notification must never affect the visitor.
+  }
+}
